@@ -1,3 +1,5 @@
 youtube_transcript_api
 groq
 streamlit
+chromadb
+cohere
