@@ -1,6 +1,8 @@
+#Inserted to allow for correct sqlite version in production
 __import__('pysqlite3')
 import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+#Imports
 import streamlit as st
 from youtube_transcript_api import YouTubeTranscriptApi
 from groq_llm import Groq_llm
@@ -39,7 +41,7 @@ def main():
     col1, col2 = st.columns(2)
     textbox = st.empty()
 
-    text_input = col1.text_input("Enter YouTube URL:")
+    text_input = col1.text_input("Enter YouTube URL to get the summary:")
     button_container = col2.container()
     button_container.write("")
     button_container.write("")
@@ -47,24 +49,26 @@ def main():
 
     if button_container.button("Submit"):
         st.session_state.chat_history = []
-        st.session_state.video_link = text_input[(text_input.index("v=") + 2) : text_input.index("&")]        
-        st.session_state['summary'] = get_transcript_summary(st.session_state.video_link)
+        st.session_state.video_link = text_input[(text_input.index("v=") + 2) : text_input.index("&")]      
+        with st.spinner('Generating Video Summary. This may take up to 2 minutes'):  
+            st.session_state['summary'] = get_transcript_summary(st.session_state.video_link)
         st.session_state.display_chat = True
 
     textbox.markdown(st.session_state.summary)
     if st.session_state.display_chat:
-        user_input = st.chat_input("Ask any question here")
+        user_input = st.chat_input("Ask any question here (or enter another video link above)")
         # Check if user has entered some text
         if user_input:
             add_message("user", user_input)
             # Process the user input (e.g., send to a language model)
-            answer = st.session_state.TranscriptProcessor.getAnswer(user_input)
-            #If LLM can't answer, links are not generated
-            linkHeader = ""
-            if len(answer[1]) != 0:
-                linkHeader = "<br/><br/> **Links** <br/> \n"
-            links = "\n".join([f"* https://www.youtube.com/watch?v={st.session_state.video_link}&t={str(int(answer[1][i]))}" for i in range(0, len(answer[1]))])
-            add_message("assistant", answer[0] + linkHeader + links)
+            with st.spinner('Generating chat response. This may take up to 30 seconds'):  
+                answer = st.session_state.TranscriptProcessor.getAnswer(user_input)
+                #If LLM can't answer, links are not generated
+                linkHeader = ""
+                if len(answer[1]) != 0:
+                    linkHeader = "<br/><br/> **Links** <br/> \n"
+                links = "\n".join([f"* https://www.youtube.com/watch?v={st.session_state.video_link}&t={str(int(answer[1][i]))}" for i in range(0, len(answer[1]))])
+                add_message("assistant", answer[0] + linkHeader + links)
 
             
         # Display the response from the language model
