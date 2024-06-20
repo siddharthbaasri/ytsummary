@@ -3,3 +3,4 @@ groq
 streamlit
 chromadb
 cohere
+pysqlite3-binary
